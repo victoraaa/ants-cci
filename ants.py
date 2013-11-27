@@ -188,8 +188,7 @@ class Ants():
     #take to go to the destination, and distance being the distance to that step counting water
     def bfs(self, source, destination):
         visited = set()
-        if source == destination:
-            return source, 0
+
         #Starts with destination
         queue = [(destination[0], destination[1], 0)]
         visited.update((destination[0], destination[1]))
@@ -197,6 +196,9 @@ class Ants():
         current_element = 0
         while current_element < len(queue):
             row, col, distance = queue[current_element]
+
+            if distance > 10:
+                return destination, 999
 
             #Found source!
             if (row, col) == source:
