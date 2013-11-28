@@ -32,11 +32,15 @@ class MyBot:
     # the ants class has the game state and is updated by the Ants.run method
     # it also has several helper methods to use
     def do_turn(self, ants):
+
+        my_ants = ants.my_ants()
+        enemy_ants = ants.enemy_ants()
+
         # track all moves, prevent collisions
         orders = {}
         def do_move_direction(loc, direction):
             new_loc = ants.destination(loc, direction)
-            if (ants.unoccupied(new_loc) and new_loc not in orders):
+            if (ants.unoccupied(new_loc) and new_loc not in orders) and loc not in orders.values():
                 ants.issue_order((loc, direction))
                 orders[new_loc] = loc
                 return True
@@ -52,14 +56,80 @@ class MyBot:
                     return True
             return False
 
+        def defensive_move():
+            for my_ant_loc in my_ants:
+                pos_counters = {"n": 0, "e": 0, "s": 0, "w": 0, "enemies": 0, "friends": 0}
+                for ant_loc in my_ants:
+                    if my_ant_loc == ant_loc:
+                        continue
+                    if ants.distance_lt(my_ant_loc, ant_loc, 3):
+                        pos_counters["friends"] += 1
+                        #for direction in ants.direction(my_ant_loc, ant_loc):
+                        #    pos_counters[direction] += 2
+                for ant_loc, owner in enemy_ants:
+                    if ants.distance_lt(my_ant_loc, ant_loc, 8):
+                        pos_counters["enemies"] += 1
+                        for direction in ants.direction(my_ant_loc, ant_loc):
+                            pos_counters[direction] += 1
+
+                if pos_counters["enemies"] > pos_counters["friends"]:
+                    min_direction = "n"
+                    if pos_counters["e"] < pos_counters[min_direction]:
+                        min_direction = "e"
+                    if pos_counters["s"] < pos_counters[min_direction]:
+                        min_direction = "s"
+                    if pos_counters["w"] < pos_counters[min_direction]:
+                        min_direction = "w"
+                    #directions_counters = [(counter, direction) for direction, counter in pos_counters.items()]
+
+                    
+                    if my_ant_loc not in orders.values():
+                        do_move_direction(my_ant_loc, min_direction)
+
+        def attack_move():
+            for my_ant_loc in my_ants:
+                pos_counters = {"n": 0, "e": 0, "s": 0, "w": 0, "friends": 0, "enemies": 0}
+                for ant_loc in my_ants:
+                    if my_ant_loc == ant_loc:
+                        continue
+                    if ants.distance_lt(my_ant_loc, ant_loc, 3):
+                        pos_counters["friends"] += 1
+                        #for direction in ants.direction(my_ant_loc, ant_loc):
+                        #    pos_counters[direction] += 1
+                for ant_loc, owner in enemy_ants:
+                    if ants.distance_lt(my_ant_loc, ant_loc, 6):
+                        pos_counters["enemies"] += 1
+                        for direction in ants.direction(my_ant_loc, ant_loc):
+                            pos_counters[direction] += 1
+
+                if pos_counters["friends"] >= pos_counters["enemies"] and pos_counters["enemies"] > 0:
+                    max_direction = "n"
+                    if pos_counters["e"] > pos_counters[max_direction]:
+                        max_direction = "e"
+                    if pos_counters["s"] > pos_counters[max_direction]:
+                        max_direction = "s"
+                    if pos_counters["w"] > pos_counters[max_direction]:
+                        max_direction = "w"
+                    #directions_counters = [(counter, direction) for direction, counter in pos_counters.items()]
+
+                    if my_ant_loc not in orders.values():
+                        print "atacou"
+                        print max_direction
+                        do_move_direction(my_ant_loc, max_direction)
+
+
+
         # prevent stepping on own hill
         for hill_loc in ants.my_hills():
             orders[hill_loc] = None
 
+        #run away from losing battles
+        defensive_move()
+
         # find close food
         ant_dist = []
         for food_loc in ants.food():
-            for ant_loc in ants.my_ants():
+            for ant_loc in my_ants:
                 dist = ants.distance(ant_loc, food_loc)
                 ant_dist.append((dist, ant_loc, food_loc))
         ant_dist.sort()
@@ -73,10 +143,10 @@ class MyBot:
         # attack hills
         for hill_loc, hill_owner in ants.enemy_hills():
             if hill_loc not in self.hills:
-                self.hills.append(hill_loc)        
+                self.hills.append(hill_loc)
         ant_dist = []
         for hill_loc in self.hills:
-            for ant_loc in ants.my_ants():
+            for ant_loc in my_ants:
                 if ant_loc not in orders.values():
                     dist = ants.distance(ant_loc, hill_loc)
                     ant_dist.append((dist, ant_loc, hill_loc))
@@ -85,6 +155,9 @@ class MyBot:
             do_move_location(ant_loc, hill_loc)
 
 
+        attack_move()
+
+        
         # explore exotic areas
         for loc in self.to_explore.keys():
             if ants.visible(loc):
@@ -94,7 +167,7 @@ class MyBot:
         locs_and_counters = [(counter, loc) for loc, counter in self.to_explore.items()]
         locs_and_counters.sort(reverse=True)
         for counter, exotic_loc in locs_and_counters:
-            for ant_loc in ants.my_ants():
+            for ant_loc in my_ants:
                 if ant_loc not in orders.values():
                     if do_move_location(ant_loc, exotic_loc):
                         break

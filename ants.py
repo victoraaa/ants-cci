@@ -164,6 +164,9 @@ class Ants():
                     for (row, col), owner in self.ant_list.items()
                     if owner != MY_ANT]
 
+    def all_ants(self):
+        return self.ant_list
+
     def food(self):
         'return a list of all food locations'
         return self.food_list[:]
@@ -188,7 +191,8 @@ class Ants():
     #take to go to the destination, and distance being the distance to that step counting water
     def bfs(self, source, destination):
         visited = set()
-
+        if source == destination:
+            return destination, 0
         #Starts with destination
         queue = [(destination[0], destination[1], 0)]
         visited.update((destination[0], destination[1]))
@@ -202,7 +206,7 @@ class Ants():
 
             #Found source!
             if (row, col) == source:
-                i = current_element - 1
+                i = current_element
                 while queue[i][2] > distance - 1:
                     i = i-1
                 
@@ -225,18 +229,37 @@ class Ants():
 
         return source, 999
 
+    def distance_lt(self, loc1, loc2, lt):
+        row1, col1 = loc1
+        row2, col2 = loc2
+        d_col = min(abs(col1 - col2), self.cols - abs(col1 - col2))
+        d_row = min(abs(row1 - row2), self.rows - abs(row1 - row2))
+        if d_row + d_col >= lt:
+            return False
+        return self.distance(loc1, loc2) < lt
+
+
+    def euclidian_distance(self, loc1, loc2):
+        row1, col1 = loc1
+        row2, col2 = loc2
+        d_col = min(abs(col1 - col2), self.cols - abs(col1 - col2))
+        d_row = min(abs(row1 - row2), self.rows - abs(row1 - row2))
+        return d_col + d_row
+
     def distance(self, loc1, loc2):
         'calculate the closest distance between two locations'
         #The default method
-        #"""
+        """
         row1, col1 = loc1
         row2, col2 = loc2
         d_col = min(abs(col1 - col2), self.cols - abs(col1 - col2))
         d_row = min(abs(row1 - row2), self.rows - abs(row1 - row2))
         #return d_row + d_col
-        #"""
+        """
         #my method
-        return self.bfs(loc1, loc2)[1]
+        euclidian_distance = self.euclidian_distance(loc1, loc2)
+        return euclidian_distance if euclidian_distance > 10 else self.bfs(loc1, loc2)[1]
+        
 
     def direction(self, loc1, loc2):
 
@@ -271,7 +294,9 @@ class Ants():
             return d
 
         #return _direction(loc1, loc2)
-        return _direction(loc1, self.bfs(loc1, loc2)[0])
+        euclidian_distance = self.euclidian_distance(loc1, loc2)
+        return _direction(loc1, loc2) if euclidian_distance > 10 else _direction(loc1, self.bfs(loc1, loc2)[0])
+        
 
     def visible(self, loc):
         ' determine which squares are visible to the given player '
