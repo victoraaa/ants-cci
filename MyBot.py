@@ -20,7 +20,8 @@ class MyBot:
         self.to_explore = {}
         for row in range(ants.rows):
             for col in range(ants.cols):
-                self.to_explore[(row, col)] = 0
+                if ants.passable((row, col)):
+                    self.to_explore[(row, col)] = 0
 
         self.unseen = []
         for row in range(ants.rows):

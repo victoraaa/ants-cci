@@ -190,40 +190,45 @@ class Ants():
     #returns (row, col), distance, being (row, col) the next step that an ant at 'source' should 
     #take to go to the destination, and distance being the distance to that step counting water
     def bfs(self, source, destination):
+
         visited = set()
         if source == destination:
             return destination, 0
+
         #Starts with destination
-        queue = [(destination[0], destination[1], 0)]
+        queue = [(destination[0], destination[1], 0, (destination[0], destination[1]) )]
         visited.update((destination[0], destination[1]))
 
         current_element = 0
         while current_element < len(queue):
-            row, col, distance = queue[current_element]
+            row, col, distance, prev = queue[current_element]
 
             if distance > 10:
-                return destination, 999
-
-            #Found source!
-            if (row, col) == source:
-                i = current_element
-                while queue[i][2] > distance - 1:
-                    i = i-1
-                
-                return (queue[i][0], queue[i][1]), distance
+                j = len(queue) - 1
+                distances = []
+                while queue[j][2] > 9:
+                    distances.append((self.euclidian_distance( (queue[j][0], queue[j][1]), destination), queue[j]))
+                    j -= 1
+                distances.sort()
+                return distances[0][1][3], 10
             
             #adds adjacent tiles to bfs
             adjacent_elements = [
-                (r, c, distance+1) for (r, c) in [
-                    (row-1, col),
-                    (row+1, col),
-                    (row, col+1),
-                    (row, col-1)
-                ] if (r, c) not in visited and self.passable((r % self.rows, c % self.cols))
+                (r, c, distance+1, (row, col)) for (r, c) in [
+                    ((row-1) % self.rows, col),
+                    ((row+1) % self.rows, col),
+                    (row, (col+1) % self.cols),
+                    (row, (col-1) % self.cols)
+                ] if (r, c) not in visited and self.passable((r, c))# and self.visible((r, c))
             ]
+            
+            #Found source!
+            for r, c, d, prev in adjacent_elements:
+                if (r, c) == source:
+                    return (queue[current_element][0], queue[current_element][1]), distance + 1
 
             queue.extend(adjacent_elements)
-            visited.update((r, c) for r, c, d in adjacent_elements)
+            visited.update((r, c) for r, c, d, prev in adjacent_elements)
 
             current_element += 1
 
