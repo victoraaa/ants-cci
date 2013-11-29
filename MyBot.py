@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 from ants import *
 from random import choice
-
+import datetime
 # define a class with a do_turn method
 # the Ants.run method will parse and update bot input
 # it will also run the do_turn method for us
+LOGGING = False
+
 class MyBot:
     def __init__(self):
         # define class level variables, will be remembered between turns
@@ -114,8 +116,6 @@ class MyBot:
                     #directions_counters = [(counter, direction) for direction, counter in pos_counters.items()]
 
                     if my_ant_loc not in orders.values():
-                        print "atacou"
-                        print max_direction
                         do_move_direction(my_ant_loc, max_direction)
 
 
@@ -125,8 +125,14 @@ class MyBot:
             orders[hill_loc] = None
 
         #run away from losing battles
+        if LOGGING:
+            start = datetime.datetime.now()
         defensive_move()
+        if LOGGING:
+            print datetime.datetime.now() - start
 
+        if LOGGING:
+            start = datetime.datetime.now()
         # find close food
         ant_dist = []
         for food_loc in ants.food():
@@ -140,7 +146,11 @@ class MyBot:
             # check if we still have time left to calculate more orders
             if ants.time_remaining() < 10:
                 break
+        if LOGGING:
+            print datetime.datetime.now() - start
 
+        if LOGGING:
+            start - datetime.datetime.now()
         # attack hills
         for hill_loc, hill_owner in ants.enemy_hills():
             if hill_loc not in self.hills:
@@ -154,24 +164,43 @@ class MyBot:
         ant_dist.sort()
         for dist, ant_loc, hill_loc in ant_dist:
             do_move_location(ant_loc, hill_loc)
+        if LOGGING:
+            print datetime.datetime.now() - start
 
-
+        if LOGGING:
+            start = datetime.datetime.now()
         attack_move()
+        if LOGGING:
+            print datetime.datetime.now() - start
 
-        
+        if LOGGING:
+            start = datetime.datetime.now()
         # explore exotic areas
+        for loc in self.to_explore.keys()[:]:
+            if not ants.passable(loc):
+                del self.to_explore[loc]
         for loc in self.to_explore.keys():
             if ants.visible(loc):
                 self.to_explore[loc] = 0
             else:
                 self.to_explore[loc] += 1
+        if LOGGING:
+            print datetime.datetime.now() - start
+        if LOGGING:
+            start = datetime.datetime.now()
         locs_and_counters = [(counter, loc) for loc, counter in self.to_explore.items()]
         locs_and_counters.sort(reverse=True)
-        for counter, exotic_loc in locs_and_counters:
+        if LOGGING:
+            print datetime.datetime.now() - start
+        if LOGGING:
+            start = datetime.datetime.now()
+        for counter, exotic_loc in locs_and_counters[:3*len(my_ants)]:
             for ant_loc in my_ants:
                 if ant_loc not in orders.values():
                     if do_move_location(ant_loc, exotic_loc):
                         break
+        if LOGGING:
+            print datetime.datetime.now() - start
 
         """
         # explore unseen areas
