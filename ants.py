@@ -195,22 +195,27 @@ class Ants():
         if source == destination:
             return destination, 0
 
-        #Starts with destination
-        queue = [(destination[0], destination[1], 0, (destination[0], destination[1]) )]
-        visited.update((destination[0], destination[1]))
-
+        #Starts with source
+        queue = [(source[0], source[1], 0, source)]
+        visited.add(source)
         current_element = 0
         while current_element < len(queue):
             row, col, distance, prev = queue[current_element]
 
-            if distance > 10:
+            if distance > 15:
                 j = len(queue) - 1
                 distances = []
-                while queue[j][2] > 9:
+                while queue[j][2] > 14:
                     distances.append((self.euclidian_distance( (queue[j][0], queue[j][1]), destination), queue[j]))
                     j -= 1
                 distances.sort()
-                return distances[0][1][3], 10
+                prev = distances[0][1]
+                while prev[3] != source:
+                    while prev[3] != (queue[j][0], queue[j][1]):
+                        j -= 1
+                    prev = queue[j]
+
+                return (prev[0], prev[1]), 15
             
             #adds adjacent tiles to bfs
             adjacent_elements = [
@@ -219,13 +224,25 @@ class Ants():
                     ((row+1) % self.rows, col),
                     (row, (col+1) % self.cols),
                     (row, (col-1) % self.cols)
-                ] if (r, c) not in visited and self.passable((r, c))# and self.visible((r, c))
+                ] if (r, c) not in visited and self.passable((r, c))
             ]
-            
-            #Found source!
+
+            #Found destination!
             for r, c, d, prev in adjacent_elements:
-                if (r, c) == source:
-                    return (queue[current_element][0], queue[current_element][1]), distance + 1
+                if (r, c) == destination:
+                    j = current_element
+                    #if source is adjacent to destination
+                    if (queue[j][0], queue[j][1]) == source:
+                        return (r, c), 1
+                    #else
+                    prev = queue[j]
+                    while prev[3] != source:
+                        while prev[3] != (queue[j][0], queue[j][1]):
+                            j -= 1
+                        prev = queue[j]
+                    
+                    return (prev[0], prev[1]), distance + 1
+                    #return (queue[current_element][0], queue[current_element][1]), distance + 1
 
             queue.extend(adjacent_elements)
             visited.update((r, c) for r, c, d, prev in adjacent_elements)
@@ -263,7 +280,7 @@ class Ants():
         """
         #my method
         euclidian_distance = self.euclidian_distance(loc1, loc2)
-        return euclidian_distance if euclidian_distance > 10 else self.bfs(loc1, loc2)[1]
+        return euclidian_distance if euclidian_distance > 15 else self.bfs(loc1, loc2)[1]
         
 
     def direction(self, loc1, loc2):
@@ -299,8 +316,10 @@ class Ants():
             return d
 
         #return _direction(loc1, loc2)
+        return _direction(loc1, self.bfs(loc1, loc2)[0])
         euclidian_distance = self.euclidian_distance(loc1, loc2)
-        return _direction(loc1, loc2) if euclidian_distance > 10 else _direction(loc1, self.bfs(loc1, loc2)[0])
+        return _direction(loc1, loc2) if euclidian_distance > 15 else _direction(loc1, self.bfs(loc1, loc2)[0])
+        
         
 
     def visible(self, loc):

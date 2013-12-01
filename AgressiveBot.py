@@ -20,6 +20,7 @@ class MyBot:
     def do_setup(self, ants):
         # initialize data structures after learning the game settings
         self.hills = []
+        self.turn = 0
 
         self.to_explore = {}
         for row in range(ants.rows):
@@ -39,6 +40,8 @@ class MyBot:
     # the ants class has the game state and is updated by the Ants.run method
     # it also has several helper methods to use
     def do_turn(self, ants):
+
+        self.turn += 1
 
         my_ants = ants.my_ants()
         not_used_ants = list(my_ants)
@@ -188,11 +191,11 @@ class MyBot:
                         if LOGGING:
                             print 'timeout soon @ attack_moves'
                         return
-                    if dist > min_dist and ant not in orders.values():
-                        do_move_location(ant, enemy)
-                    else:
-                        if ant not in orders.values():
-                            orders[ant] = ant
+                    #if dist > min_dist and ant not in orders.values():
+                    do_move_location(ant, enemy)
+                    #else:
+                    #    if ant not in orders.values():
+                    #        orders[ant] = ant
 
             if LOGGING:
                 start = datetime.datetime.now()
@@ -387,6 +390,8 @@ class MyBot:
         if len(not_used_ants) > 30:
             attack_move()
 
+        if self.turn > 0.7*ants.turns:
+            attack_move()
         
         #run away from losing battles
         defensive_move()
@@ -405,7 +410,6 @@ class MyBot:
         explore_map()
 
         if ants.time_remaining() > 200 and len(not_used_ants) > 10 :
-            print "entrou"
             explore_map()
         
         if ants.time_remaining() > 100 and len(not_used_ants) > 10:
